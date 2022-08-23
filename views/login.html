@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+
+<body>
+    <nav>
+        <a href="/">HOME</a> |
+        <a href="/register">REGISTER</a> |
+        <a href="/login">LOGIN</a>
+    </nav>
+    <div class="user-detail">
+        <h2>PLEASE LOG IN</h2>
+
+        <form action="/login" method="POST">
+            <!-- <label>Full Name: </label>
+                <input type="text" placeholder="Enter Your First Name" name="user_fullname" required> <br> -->
+
+            <label>Email Address: </label>
+            <input type="email" placeholder="Enter Your Email Address" name="email" required> <br>
+
+            <label>Password: </label>
+            <input type="password" placeholder="Enter Your Password" name="password" required> <br>
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+
+*{
+    color:black
+}
+
+nav{
+    display: flex;
+    margin-left: auto;
+    margin-right: auto;
+    text-decoration: none;
+}
+
+#user-ep{
+    position: relative !important;
+    left: 3rem !important;
+}
+
+body{
+    min-height: 100vh;
+    min-width: 100vw;
+}
+
+.px-5{
+    position: relative !important;
+    left: 3rem !important;
+
+}

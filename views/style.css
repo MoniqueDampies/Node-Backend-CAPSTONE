@@ -3,11 +3,16 @@
     color:black
 }
 
-nav{
-    display: flex;
+#navbar{
+    /* display: flex;
     margin-left: auto;
-    margin-right: auto;
-    text-decoration: none;
+    margin-right: auto; */
+    text-decoration: none!important;
+    font-size: 4rem!important;
+}
+
+a:hover{
+    color: aqua;
 }
 
 #user-ep{

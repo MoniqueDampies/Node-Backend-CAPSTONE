@@ -5,7 +5,11 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const {genSalt, compare, hash } = require("bcrypt");
+const {
+    genSalt,
+    compare,
+    hash
+} = require("bcrypt");
 const app = express();
 const router = express.Router();
 const port = parseInt(process.env.PORT) || 4000;
@@ -23,10 +27,12 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(cors({
-    origin: ['http://127.0.0.1:8080', 'http://localhost:8080'],
-    credentials: true
-}));
+app.use(
+    cors({
+        origin: ["http://127.0.0.1:8080", "http://localhost:8080"],
+        credentials: true,
+    })
+);
 
 // add cors to the app variable
 app.use(
@@ -39,12 +45,12 @@ app.use(
 );
 
 // connect to database (TO MAKE SURE ITS CONNECTED).
-db.connect( (err) => {
-    if(err){
+db.connect((err) => {
+    if (err) {
         console.log(`mySQL is not connected...<br>
-        ${err}`)
-    } else{
-        console.log('mySQL connected...')
+        ${err}`);
+    } else {
+        console.log("mySQL connected...");
     }
 });
 
@@ -53,68 +59,73 @@ db.connect( (err) => {
 // HOME PAGE ROUTER
 router.get("/", (req, res) => {
     res.status(200).sendFile("./views/index.html", {
-        root: __dirname
+        root: __dirname,
     });
 });
 
 // LOGIN PAGE ROUTER
 router.get("/login", (req, res) => {
     res.status(200).sendFile("./views/login.html", {
-        root: __dirname
+        root: __dirname,
     });
 });
 
 // REGISTER PAGE ROUTER
 router.get("/register", (req, res) => {
     res.status(200).sendFile("./views/register.html", {
-        root: __dirname
+        root: __dirname,
     });
 });
 
 //*PRODUCTS PAGE ROUTER*//
 router.get("/productss", (req, res) => {
     res.status(200).sendFile("./views/products.html", {
-        root: __dirname
+        root: __dirname,
     });
 });
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------VERIFICATION ROUTES---------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //*LOGIN USER*//
 
-app.post('/login', bodyParser.json(),
-    (req, res)=> {
-    try{
+app.post("/login", bodyParser.json(), (req, res) => {
+    try {
         // Get email and password
-        const { email, password } = req.body;
-        const strQry =
-        `
+        const {
+            email,
+            password
+        } = req.body;
+        const strQry = `
         SELECT email, password
         FROM users
         WHERE email = '${email}';
         `;
-        db.query(strQry, async (err, results)=> {
-            if(err) throw err;
+        db.query(strQry, async (err, results) => {
+            if (err) throw err;
             const key = jwt.sign(JSON.stringify(results[0]), process.env.secret);
-            res.json({
+            res.send(`<nav>
+            <a href="/">HOME</a> |
+            <a href="/productss">PRODUCTS</a>
+            </nav> <br>
+            LOGIN SUCCESSFUL`).json({
                 status: 200,
                 results: key,
             });
-            localStorage.setItem('key', JSON.stringify(key));
-            key = localStorage.getItem('key');
-            switch(true){
-                case (await compare(password,results[0].password)):
-                res.redirect('/productss')
-                break
+            localStorage.setItem("key", JSON.stringify(key));
+            key = localStorage.getItem("key");
+            switch (true) {
+                case await compare(password, results[0].password):
+                    break;
                 default:
-                console.log("Bye");
+                    console.log("Bye");
             }
-        })
-    }catch(e) {
+        });
+    } catch (e) {
         console.log(`From login: ${e.message}`);
     }
 });
-
 
 //*USER REGISTRATION*//
 //*ADD NEW USER*//
@@ -122,13 +133,15 @@ app.post('/login', bodyParser.json(),
 app.post("/register", bodyParser.json(), (req, res) => {
     let emails = `SELECT email FROM users WHERE ?`;
     let email = {
-        email: req.body.email
+        email: req.body.email,
     };
     db.query(emails, email, async (err, results) => {
         if (err) throw err;
         // VALIDATION
         if (results.length > 0) {
-            res.send("The provided email/phone number exists. Please enter another one");
+            res.send(
+                "The provided email/phone number exists. Please enter another one"
+            );
         } else {
             const bd = req.body;
             console.log(bd);
@@ -149,11 +162,19 @@ app.post("/register", bodyParser.json(), (req, res) => {
                     bd.password,
                     bd.phone,
                     bd.province,
-                    bd.country
+                    bd.country,
                 ],
                 (err, results) => {
                     if (err) throw err;
-                    res.send(`${results.affectedRows} NEW USER ADDED`);
+                    res.send(`
+                    <nav>
+                    <a href="/">HOME</a> |
+                    <a href="/register">REGISTER</a> |
+                    <a href="/login">LOGIN</a>
+                    </nav> <br>
+                    ${results.affectedRows} NEW USER ADDED <BR>
+                    REGISTRATION SUCCESSFUL!
+                    `);
                 }
             );
         }
@@ -289,7 +310,14 @@ router.put("/products/:id", bodyParser.json(), (req, res) => {
     WHERE id=?`;
     db.query(
         strQry,
-        [req.body.title, req.body.price, req.body.category, req.body.description, req.body.img, req.params.id],
+        [
+            req.body.title,
+            req.body.price,
+            req.body.category,
+            req.body.description,
+            req.body.img,
+            req.params.id,
+        ],
         (err, results) => {
             if (err) throw err;
             res.send(`${results.affectedRows} PRODUCT/S UPDATED`);
@@ -396,7 +424,15 @@ router.put("/paintings/:id", bodyParser.json(), (req, res) => {
     WHERE id=?`;
     db.query(
         strQry,
-        [req.body.title, req.body.price, req.body.category, req.body.description, req.body.size, req.body.img, req.params.id],
+        [
+            req.body.title,
+            req.body.price,
+            req.body.category,
+            req.body.description,
+            req.body.size,
+            req.body.img,
+            req.params.id,
+        ],
         (err, results) => {
             if (err) throw err;
             res.send(`${results.affectedRows} PAINTING UPDATED`);
@@ -408,11 +444,9 @@ router.put("/paintings/:id", bodyParser.json(), (req, res) => {
 //--------------------------------------------CART ROUTES--------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 //////////////////////////////////////////////////////////////////////////////////////
 module.exports = {
     devServer: {
         Proxy: "*",
     },
 };
-

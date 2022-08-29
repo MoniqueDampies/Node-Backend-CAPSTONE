@@ -47,10 +47,10 @@ app.use(
 // connect to database (TO MAKE SURE ITS CONNECTED).
 db.connect((err) => {
     if (err) {
-        console.log(`mySQL is not connected...<br>
+        console.log(`MySql is not connected...<br>
         ${err}`);
     } else {
-        console.log("mySQL connected...");
+        console.log("MySql connected...");
     }
 });
 
@@ -84,6 +84,13 @@ router.get("/productss", (req, res) => {
     });
 });
 
+// //*404 PAGE ROUTER*//
+// router.get("/:type", (req, res) => {
+//     res.status(200).sendFile("./views/404.html", {
+//         root: __dirname,
+//     });
+// });
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //-----------------------------------------VERIFICATION ROUTES---------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,14 +112,18 @@ app.post("/login", bodyParser.json(), (req, res) => {
         db.query(strQry, async (err, results) => {
             if (err) throw err;
             const key = jwt.sign(JSON.stringify(results[0]), process.env.secret);
-            res.send(`<nav>
+            res
+                .send(
+                    `<nav>
             <a href="/">HOME</a> |
             <a href="/productss">PRODUCTS</a>
             </nav> <br>
-            LOGIN SUCCESSFUL`).json({
-                status: 200,
-                results: key,
-            });
+            LOGIN SUCCESSFUL`
+                )
+                .json({
+                    status: 200,
+                    results: key,
+                });
             localStorage.setItem("key", JSON.stringify(key));
             key = localStorage.getItem("key");
             switch (true) {
@@ -223,6 +234,32 @@ router.get("/users/:id", (req, res) => {
             });
         }
     });
+});
+
+//*UPDATE A USER*//
+
+router.put("/users/:id", bodyParser.json(), (req, res) => {
+    // Query
+    const strQry = `
+    UPDATE users
+    SET firstName=?, lastName=?, email=?, phone=?, province=?, country=?
+    WHERE id=?`;
+    db.query(
+        strQry,
+        [
+            req.body.firstName,
+            req.body.lastName,
+            req.body.email,
+            req.body.phone,
+            req.body.province,
+            req.body.country,
+            req.params.id,
+        ],
+        (err, results) => {
+            if (err) throw err;
+            res.send(`${results.affectedRows} USER DETAILS UPDATED`);
+        }
+    );
 });
 
 //*DELETE USER WITH SPECIFIC ID*//
@@ -441,8 +478,293 @@ router.put("/paintings/:id", bodyParser.json(), (req, res) => {
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//--------------------------------------------CART ROUTES--------------------------------------------------------//
+//--------------------------------------------PRODUCTS CART ROUTES--------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//*ADD PRODUCTS TO CART FROM SPECIFIC USER*//
+
+router.post("/users/:id/cart", bodyParser.json(), (req, res) => {
+    // mySQL query
+    let cart = `SELECT cart FROM users WHERE id = ${req.params.id};`;
+    // function
+    db.query(cart, (err, results) => {
+        if (err) throw err;
+        if (results.length > 0) {
+            let cart;
+            if (results[0].cart == null) {
+                cart = [];
+            } else {
+                cart = JSON.parse(results[0].cart);
+            }
+            let {id} = req.body;
+            // mySQL query
+            let product = `Select * FROM products WHERE id = ?`;
+            // function
+            db.query(product, id, (err, productData) => {
+                if (err) res.send(`${err}`);
+                let data = {
+                    cart_id: cart.length + 1,
+                    productData,
+                };
+                cart.push(data);
+                console.log(cart);
+                let updateCart = `UPDATE users SET cart = ? WHERE id = ${req.params.id}`;
+                db.query(updateCart, JSON.stringify(cart), (err, results) => {
+                    if (err) res.send(`${err}`);
+                    res.json({
+                        cart: results,
+                    });
+                });
+            });
+        }
+    });
+});
+
+//*GET ALL CART PRODUCTS FROM SPECIFIC USER*//
+
+router.get("/users/:id/cart", (req, res) => {
+    // Query
+        const strQry = `
+        SELECT *
+        FROM users
+        WHERE id = ?;
+        `;
+        db.query(strQry, [req.params.id], (err, results) => {
+        if (err) throw err;
+        res.json({
+            status: 200,
+            results: JSON.parse(results[0].cart),
+        });
+    });
+});
+
+//*GET SINGLE PRODUCTS OUT OF CART FROM SPECIFIC USER*//
+
+router.get("/users/:id/cart/:cartid", (req, res) => {
+    // Query
+            const strQry = `
+        SELECT *
+        FROM users
+        WHERE id = ?;
+        `;
+    db.query(strQry, [req.params.id], (err, results) => {
+        if (err) throw err;
+        let cartResults = JSON.parse(results[0].cart);
+        res.json({
+            status: 200,
+            results: cartResults.filter((item)=>{
+                return item.cart_id == req.params.cartid
+            }),
+        });
+    });
+});
+
+//*DELETE ALL PRODUCTS FROM CART FOR SPECIFIC USER*//
+
+router.delete("/users/:id/cart", (req, res) => {
+    // Query
+    const strQry = `
+        UPDATE users
+        SET cart=null
+        WHERE id=?
+        `;
+    db.query(strQry, [req.params.id], (err, results) => {
+        if (err) throw err;
+        res.json({
+            status: 200,
+            results: results,
+        });
+    });
+});
+
+//*DELETE SPECIFIC CART PRODUCTS FROM SPECIFIC USER*//
+
+router.delete("/users/:id/cart/:cartid", (req, res) => {
+    const delSingleCartId = `
+    SELECT cart FROM users
+    WHERE id = ${req.params.id}
+`;
+    db.query(delSingleCartId, (err, results) => {
+        if (err) throw err;
+        if (results.length > 0) {
+            if (results[0].cart != null) {
+                const result = JSON.parse(results[0].cart).filter((cart) => {
+                    return cart.cart_id != req.params.cartid;
+                });
+                result.forEach((cart, i) => {
+                    cart.cart_id = i + 1;
+                });
+                const query = `
+                UPDATE users
+                SET cart = ?
+                WHERE id = ${req.params.id}
+            `;
+                db.query(query, [JSON.stringify(result)], (err, results) => {
+                    if (err) throw err;
+                    res.json({
+                        status: 200,
+                        results: "Successfully deleted item from cart",
+                    });
+                });
+            } else {
+                res.json({
+                    status: 400,
+                    results: "This user has an empty cart",
+                });
+            }
+        } else {
+            res.json({
+                status: 400,
+                results: "There is no user with that id",
+            });
+        }
+    });
+});
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------PAINTINGS CART ROUTES--------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//*ADD PAINTINGS TO ART CART FROM SPECIFIC USER*//
+
+router.post("/users/:id/artcart", bodyParser.json(), (req, res) => {
+    // mySQL query
+    let artcart = `SELECT artcart FROM users WHERE id = ${req.params.id};`;
+    // function
+    db.query(artcart, (err, results) => {
+        if (err) throw err;
+        if (results.length > 0) {
+            let artcart;
+            if (results[0].artcart == null) {
+                artcart = [];
+            } else {
+                artcart = JSON.parse(results[0].artcart);
+            }
+            let {id} = req.body;
+            // mySQL query
+            let paintings = `Select * FROM paintings WHERE id = ?`;
+            // function
+            db.query(paintings, id, (err, paintingsData) => {
+                if (err) res.send(`${err}`);
+                let data = {
+                    artcart_id: artcart.length + 1,
+                    paintingsData,
+                };
+                artcart.push(data);
+                console.log(artcart);
+                let updateArtCart = `UPDATE users SET artcart = ? WHERE id = ${req.params.id}`;
+                db.query(updateArtCart, JSON.stringify(artcart), (err, results) => {
+                    if (err) res.send(`${err}`);
+                    res.json({
+                        artcart: results,
+                    });
+                });
+            });
+        }
+    });
+});
+
+//*GET ALL CART PAINTINGS FROM SPECIFIC USER*//
+
+router.get("/users/:id/artcart", (req, res) => {
+    // Query
+        const strQry = `
+        SELECT *
+        FROM users
+        WHERE id = ?;
+        `;
+        db.query(strQry, [req.params.id], (err, results) => {
+        if (err) throw err;
+        res.json({
+            status: 200,
+            results: JSON.parse(results[0].artcart),
+        });
+    });
+});
+
+//*GET SINGLE PRODUCTS OUT OF CART FROM SPECIFIC USER*//
+
+router.get("/users/:id/artcart/:cartid", (req, res) => {
+    // Query
+            const strQry = `
+        SELECT *
+        FROM users
+        WHERE id = ?;
+        `;
+    db.query(strQry, [req.params.id], (err, results) => {
+        if (err) throw err;
+        let artcartResults = JSON.parse(results[0].artcart);
+        res.json({
+            status: 200,
+            results: artcartResults.filter((item)=>{
+                return item.artcart_id == req.params.cartid
+            }),
+        });
+    });
+});
+
+//*DELETE ALL PRODUCTS FROM CART FOR SPECIFIC USER*//
+
+router.delete("/users/:id/artcart", (req, res) => {
+    // Query
+    const strQry = `
+        UPDATE users
+        SET artcart=null
+        WHERE id=?
+        `;
+    db.query(strQry, [req.params.id], (err, results) => {
+        if (err) throw err;
+        res.json({
+            status: 200,
+            results: results,
+        });
+    });
+});
+
+//*DELETE SPECIFIC ART CART PRODUCTS FROM SPECIFIC USER*//  //*NOT WORKING :(*//
+
+router.delete("/users/:id/artcart/:cartid", (req, res) => {
+    const deleteSingleArtCartId = `
+    SELECT artcart FROM users
+    WHERE id = ${req.params.id}
+`;
+    db.query(deleteSingleArtCartId, (err, results) => {
+        if (err) throw err;
+        if (results.length > 0) {
+            if (results[0].artcart != null) {
+                const result = JSON.parse(results[0].artcart).filter((artcart) => {
+                    return artcart.artcart_id != req.params.artcartid;
+                });
+                result.forEach((artcart, i) => {
+                    artcart.artcart_id = i + 1;
+                });
+                const query = `
+                UPDATE users
+                SET artcart = ?
+                WHERE id = ${req.params.id}
+            `;
+                db.query(query, [JSON.stringify(result)], (err, results) => {
+                    if (err) throw err;
+                    res.json({
+                        status: 200,
+                        results: "Successfully deleted item from the artcart",
+                    });
+                });
+            } else {
+                res.json({
+                    status: 400,
+                    results: "This user has an empty the artcart",
+                });
+            }
+        } else {
+            res.json({
+                status: 400,
+                results: "There is no user with that id",
+            });
+        }
+    });
+});
 
 //////////////////////////////////////////////////////////////////////////////////////
 module.exports = {

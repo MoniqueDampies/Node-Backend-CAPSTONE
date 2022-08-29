@@ -1,31 +1,30 @@
-
-*{
-    color:black
+* {
+    color: black
 }
 
-#navbar{
+#navbar {
     /* display: flex;
     margin-left: auto;
     margin-right: auto; */
-    text-decoration: none!important;
-    font-size: 4rem!important;
+    text-decoration: none !important;
+    font-size: 4rem !important;
 }
 
-a:hover{
+a:hover {
     color: aqua;
 }
 
-#user-ep{
+#user-ep {
     position: relative !important;
     left: 3rem !important;
 }
 
-body{
+body {
     min-height: 100vh;
     min-width: 100vw;
 }
 
-.px-5{
+.px-5 {
     position: relative !important;
     left: 3rem !important;
 

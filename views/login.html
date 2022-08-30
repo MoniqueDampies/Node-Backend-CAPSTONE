@@ -14,7 +14,7 @@
     display: flex;
     margin-left: auto;
     margin-right: auto;
-    width: 200px;
+    width: 400px;
     height: 284px;
     background: #F4F6FB;
     border: 1px solid white;
@@ -130,7 +130,7 @@ button:hover {
         font-size: 1.2rem;">
             LOGIN</a>
     </nav>
-    <div class="user-detail container-fluid">
+    <div class="user-detail container pt-5">
         <!-- <h2>PLEASE LOG IN</h2>
         <form action="/login" method="POST">
             <label class="text-white">Email Address: </label>
@@ -149,19 +149,17 @@ button:hover {
                         d="M4 15h2v5h12V4H6v5H4V3a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6zm6-4V8l5 4-5 4v-3H2v-2h8z">
                     </path>
                 </svg>
-                <h1 class="form_heading">Sign in</h1>
+                <h1 class="form_heading">Login</h1>
             </div>
             <div class="field">
                 <label for="email">Email</label>
-                <input class="input" name="email" type="text" placeholder="Email" id="email">
+                <input class="input" name="email" type="text" placeholder="Email" id="email" required>
             </div>
             <div class="field">
                 <label for="password">Password</label>
-                <input class="input" name="password" type="password" placeholder="Password" id="password">
+                <input class="input" name="password" type="password" placeholder="Password" id="password" requiredrs>
             </div>
-            <div class="field">
-                <button class="button">Login</button>
-            </div>
+                <button  type="submit" class="button field">Login</button>
         </form>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>

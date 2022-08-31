@@ -24,6 +24,7 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Headers", "*");
     res.setHeader("Access-Control-Allow-Methods", "*");
+    res.setHeader("Access-Control-Allow-*", "*");
     next();
 });
 
@@ -44,15 +45,6 @@ app.use(
     })
 );
 
-// connect to database (TO MAKE SURE ITS CONNECTED).
-db.connect((err) => {
-    if (err) {
-        console.log(`MySql is not connected...<br>
-        ${err}`);
-    } else {
-        console.log("MySql connected...");
-    }
-});
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -111,32 +103,80 @@ app.post("/login", bodyParser.json(), (req, res) => {
         `;
         db.query(strQry, async (err, results) => {
             if (err) throw err;
-            const key = jwt.sign(JSON.stringify(results[0]), process.env.secret);
-            res
-                .send(
-                    `<nav>
-            <a href="/">HOME</a> |
-            <a href="/productss">PRODUCTS</a>
-            </nav> <br>
-            LOGIN SUCCESSFUL`
-                )
-                .json({
-                    status: 200,
-                    results: key,
-                });
-            localStorage.setItem("key", JSON.stringify(key));
-            key = localStorage.getItem("key");
             switch (true) {
                 case await compare(password, results[0].password):
+                    jwt.sign(
+                        JSON.stringify(results[0]),
+                        process.env.secret,
+                        (err, token) => {
+                            if (err) throw err;
+                            res.json({
+                                status: 200,
+                                user: results,
+                                token: token,
+                            });
+                        }
+                    );
                     break;
                 default:
-                    console.log("Bye");
+                    res.json({
+                        status: 400,
+                        msg: "Login Failed.",
+                    });
             }
         });
     } catch (e) {
         console.log(`From login: ${e.message}`);
     }
 });
+
+// app.post("/login", bodyParser.json(), (req, res) => {
+//     try {
+//         // Get email and password
+//         const {
+//             email,
+//             password
+//         } = req.body;
+//         const strQry = `
+//         SELECT email, password
+//         FROM users
+//         WHERE email = '${email}';
+//         `;
+//         db.query(strQry, async (err, results) => {
+//             if (err) throw err;
+//             if (results.length < 1) {
+//                 res.json({
+//                     status: 204,
+//                     results: "Register Failed",
+//                 });
+//             const key = jwt.sign(JSON.stringify(results[0]), process.env.secret);
+//             }else{res.send(
+//                     `<nav>
+//             <a href="/">HOME</a> |
+//             <a href="/productss">PRODUCTS</a>
+//             </nav> <br>
+//             LOGIN SUCCESSFUL`
+//                 )
+//                 .json({
+//                     status: 200,
+//                     results: key,
+//             })};
+//             localStorage.setItem("key", JSON.stringify(key));
+//             key = localStorage.getItem("key");
+//             switch (true) {
+//                 case (await compare(password, results[0].password)):
+//                     break;
+//                 default:
+//                     res.json({
+//                         status: 400,
+//                         msg: "Login Failed"
+//                     })
+//             }
+//         });
+//     } catch (e) {
+//         console.log(`From login: ${e.message}`);
+//     }
+// });
 
 //*USER REGISTRATION*//
 //*ADD NEW USER*//
@@ -177,7 +217,13 @@ app.post("/register", bodyParser.json(), (req, res) => {
                 ],
                 (err, results) => {
                     if (err) throw err;
-                    res.send(`
+                    if (results.length < 1) {
+                        res.json({
+                            status: 204,
+                            results: "Register Failed",
+                        });
+                    } else {
+                        res.send(`
                     <nav>
                     <a href="/">HOME</a> |
                     <a href="/register">REGISTER</a> |
@@ -186,6 +232,7 @@ app.post("/register", bodyParser.json(), (req, res) => {
                     ${results.affectedRows} NEW USER ADDED <BR>
                     REGISTRATION SUCCESSFUL!
                     `);
+                    }
                 }
             );
         }
@@ -496,7 +543,9 @@ router.post("/users/:id/cart", bodyParser.json(), (req, res) => {
             } else {
                 cart = JSON.parse(results[0].cart);
             }
-            let {id} = req.body;
+            let {
+                id
+            } = req.body;
             // mySQL query
             let product = `Select * FROM products WHERE id = ?`;
             // function
@@ -524,12 +573,12 @@ router.post("/users/:id/cart", bodyParser.json(), (req, res) => {
 
 router.get("/users/:id/cart", (req, res) => {
     // Query
-        const strQry = `
+    const strQry = `
         SELECT *
         FROM users
         WHERE id = ?;
         `;
-        db.query(strQry, [req.params.id], (err, results) => {
+    db.query(strQry, [req.params.id], (err, results) => {
         if (err) throw err;
         res.json({
             status: 200,
@@ -542,7 +591,7 @@ router.get("/users/:id/cart", (req, res) => {
 
 router.get("/users/:id/cart/:cartid", (req, res) => {
     // Query
-            const strQry = `
+    const strQry = `
         SELECT *
         FROM users
         WHERE id = ?;
@@ -552,8 +601,8 @@ router.get("/users/:id/cart/:cartid", (req, res) => {
         let cartResults = JSON.parse(results[0].cart);
         res.json({
             status: 200,
-            results: cartResults.filter((item)=>{
-                return item.cart_id == req.params.cartid
+            results: cartResults.filter((item) => {
+                return item.cart_id == req.params.cartid;
             }),
         });
     });
@@ -625,7 +674,6 @@ router.delete("/users/:id/cart/:cartid", (req, res) => {
 //--------------------------------------------PAINTINGS CART ROUTES--------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 //*ADD PAINTINGS TO ART CART FROM SPECIFIC USER*//
 
 router.post("/users/:id/artcart", bodyParser.json(), (req, res) => {
@@ -641,7 +689,9 @@ router.post("/users/:id/artcart", bodyParser.json(), (req, res) => {
             } else {
                 artcart = JSON.parse(results[0].artcart);
             }
-            let {id} = req.body;
+            let {
+                id
+            } = req.body;
             // mySQL query
             let paintings = `Select * FROM paintings WHERE id = ?`;
             // function
@@ -669,12 +719,12 @@ router.post("/users/:id/artcart", bodyParser.json(), (req, res) => {
 
 router.get("/users/:id/artcart", (req, res) => {
     // Query
-        const strQry = `
+    const strQry = `
         SELECT *
         FROM users
         WHERE id = ?;
         `;
-        db.query(strQry, [req.params.id], (err, results) => {
+    db.query(strQry, [req.params.id], (err, results) => {
         if (err) throw err;
         res.json({
             status: 200,
@@ -687,7 +737,7 @@ router.get("/users/:id/artcart", (req, res) => {
 
 router.get("/users/:id/artcart/:cartid", (req, res) => {
     // Query
-            const strQry = `
+    const strQry = `
         SELECT *
         FROM users
         WHERE id = ?;
@@ -697,8 +747,8 @@ router.get("/users/:id/artcart/:cartid", (req, res) => {
         let artcartResults = JSON.parse(results[0].artcart);
         res.json({
             status: 200,
-            results: artcartResults.filter((item)=>{
-                return item.artcart_id == req.params.cartid
+            results: artcartResults.filter((item) => {
+                return item.artcart_id == req.params.cartid;
             }),
         });
     });

@@ -95,8 +95,9 @@ app.post("/login", bodyParser.json(), (req, res) => {
             email,
             password
         } = req.body;
+        
         const strQry = `
-        SELECT email, password
+        SELECT *
         FROM users
         WHERE email = '${email}';
         `;

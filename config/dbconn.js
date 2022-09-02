@@ -6,8 +6,7 @@ const connection = createPool({
     password: process.env.dbPassword,
     port: process.env.dbPort,
     database: process.env.database,
-    multipleStatements: true,
-    connectionLimit: 10
+    multipleStatements: true
 });
 
 

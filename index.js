@@ -95,7 +95,7 @@ app.post("/login", bodyParser.json(), (req, res) => {
             email,
             password
         } = req.body;
-        
+
         const strQry = `
         SELECT *
         FROM users
@@ -236,7 +236,7 @@ router.put("/users/:id", bodyParser.json(), (req, res) => {
     // Query
     const strQry = `
     UPDATE users
-    SET firstName=?, lastName=?, email=?, phone=?, province=?, country=?
+    SET *
     WHERE id=?`;
     db.query(
         strQry,
@@ -293,7 +293,7 @@ router.get("/products", (req, res) => {
         if (err) throw err;
         res.json({
             status: 200,
-            results: results,
+            results: results.length <= 0 ? "Sorry, no products was found." :results,
         });
     });
 });
@@ -333,7 +333,8 @@ router.post("/products", bodyParser.json(), (req, res) => {
             if (err) throw err;
             res.json({
                 status: 200,
-                msg: `${results.affectedRows} PRODUCT/S ADDED`});
+                msg: `${results.affectedRows} PRODUCT/S ADDED`,
+            });
         }
     );
 });
@@ -361,7 +362,8 @@ router.put("/products/:id", bodyParser.json(), (req, res) => {
             if (err) throw err;
             res.json({
                 status: 200,
-                msg: `${results.affectedRows} PRODUCT/S UPDATED`});
+                msg: `${results.affectedRows} PRODUCT/S UPDATED`,
+            });
         }
     );
 });
@@ -375,11 +377,12 @@ app.delete("/products/:id", (req, res) => {
     WHERE id = ?;
     ALTER TABLE products AUTO_INCREMENT = 1;
     `;
-    db.query(strQry, [req.params.id], (err, data) => {
+    db.query(strQry, [req.params.id], (err, results) => {
         if (err) throw err;
         res.json({
             status: 200,
-            msg: `${results.affectedRows} PRODUCT/S DELETED`});
+            msg:  `${results.affectedRows} PRODUCT/S DELETED`,
+        });
     });
 });
 
@@ -438,7 +441,8 @@ router.post("/paintings", bodyParser.json(), (req, res) => {
             if (err) throw err;
             res.json({
                 status: 200,
-                msg: `${results.affectedRows} PAINTING/S DELETED`});
+                msg: `${results.affectedRows} PAINTING/S DELETED`,
+            });
         }
     );
 });
@@ -485,7 +489,8 @@ router.put("/paintings/:id", bodyParser.json(), (req, res) => {
             if (err) throw err;
             res.json({
                 status: 200,
-                msg: `${results.affectedRows} PAINTING/S UPDATED`});
+                msg: `${results.affectedRows} PAINTING/S UPDATED`,
+            });
         }
     );
 });
@@ -525,7 +530,7 @@ router.post("/users/:id/cart", bodyParser.json(), (req, res) => {
                 console.log(cart);
                 let updateCart = `UPDATE users SET cart = ? WHERE id = ${req.params.id}`;
                 db.query(updateCart, JSON.stringify(cart), (err, results) => {
-                    if (err) res.send(`${err}`);
+                    if (err) throw err;
                     res.json({
                         status: 200,
                         cart: results,
@@ -547,10 +552,17 @@ router.get("/users/:id/cart", (req, res) => {
         `;
     db.query(strQry, [req.params.id], (err, results) => {
         if (err) throw err;
-        res.json({
-            status: 200,
-            results: JSON.parse(results[0].cart),
-        });
+        if (results.length < 1) {
+            res.json({
+                status: 204,
+                results: "No items in cart",
+            });
+        } else {
+            res.json({
+                status: 200,
+                results: JSON.parse(results[0].cart),
+            });
+        }
     });
 });
 

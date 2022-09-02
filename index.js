@@ -130,54 +130,6 @@ app.post("/login", bodyParser.json(), (req, res) => {
     }
 });
 
-// app.post("/login", bodyParser.json(), (req, res) => {
-//     try {
-//         // Get email and password
-//         const {
-//             email,
-//             password
-//         } = req.body;
-//         const strQry = `
-//         SELECT email, password
-//         FROM users
-//         WHERE email = '${email}';
-//         `;
-//         db.query(strQry, async (err, results) => {
-//             if (err) throw err;
-//             if (results.length < 1) {
-//                 res.json({
-//                     status: 204,
-//                     results: "Register Failed",
-//                 });
-//             const key = jwt.sign(JSON.stringify(results[0]), process.env.secret);
-//             }else{res.send(
-//                     `<nav>
-//             <a href="/">HOME</a> |
-//             <a href="/productss">PRODUCTS</a>
-//             </nav> <br>
-//             LOGIN SUCCESSFUL`
-//                 )
-//                 .json({
-//                     status: 200,
-//                     results: key,
-//             })};
-//             localStorage.setItem("key", JSON.stringify(key));
-//             key = localStorage.getItem("key");
-//             switch (true) {
-//                 case (await compare(password, results[0].password)):
-//                     break;
-//                 default:
-//                     res.json({
-//                         status: 400,
-//                         msg: "Login Failed"
-//                     })
-//             }
-//         });
-//     } catch (e) {
-//         console.log(`From login: ${e.message}`);
-//     }
-// });
-
 //*USER REGISTRATION*//
 //*ADD NEW USER*//
 
@@ -219,19 +171,14 @@ app.post("/register", bodyParser.json(), (req, res) => {
                     if (err) throw err;
                     if (results.length < 1) {
                         res.json({
-                            status: 204,
-                            results: "Register Failed",
+                            status: 400,
+                            msg: "Register Failed.",
                         });
                     } else {
-                        res.send(`
-                    <nav>
-                    <a href="/">HOME</a> |
-                    <a href="/register">REGISTER</a> |
-                    <a href="/login">LOGIN</a>
-                    </nav> <br>
-                    ${results.affectedRows} NEW USER ADDED <BR>
-                    REGISTRATION SUCCESSFUL!
-                    `);
+                        res.json({
+                            status: 200,
+                            msg: "Register Successful.",
+                        });
                     }
                 }
             );
@@ -285,7 +232,7 @@ router.get("/users/:id", (req, res) => {
 
 //*UPDATE A USER*//
 
-router.put("/users/:id", bodyParser.json(), (req, res) => {
+router.put(" ", bodyParser.json(), (req, res) => {
     // Query
     const strQry = `
     UPDATE users
@@ -671,7 +618,7 @@ router.delete("/users/:id/cart/:cartid", (req, res) => {
 });
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//--------------------------------------------PAINTINGS CART ROUTES--------------------------------------------------------//
+//--------------------------------------------PAINTINGS CART ROUTES-----------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //*ADD PAINTINGS TO ART CART FROM SPECIFIC USER*//

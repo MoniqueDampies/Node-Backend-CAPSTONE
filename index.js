@@ -45,7 +45,6 @@ app.use(
     })
 );
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // HOME PAGE ROUTER
@@ -232,7 +231,7 @@ router.get("/users/:id", (req, res) => {
 
 //*UPDATE A USER*//
 
-router.put(" ", bodyParser.json(), (req, res) => {
+router.put("/users/:id", bodyParser.json(), (req, res) => {
     // Query
     const strQry = `
     UPDATE users
@@ -251,7 +250,10 @@ router.put(" ", bodyParser.json(), (req, res) => {
         ],
         (err, results) => {
             if (err) throw err;
-            res.send(`${results.affectedRows} USER DETAILS UPDATED`);
+            res({
+                status: 200,
+                msg: `${results.affectedRows} USER DETAILS UPDATED`,
+            });
         }
     );
 });
@@ -267,7 +269,10 @@ router.delete("/users/:id", (req, res) => {
     `;
     db.query(strQry, [req.params.id], (err, data) => {
         if (err) throw err;
-        res.send(`USER HAS BEEN DELETED`);
+        res({
+            status: 200,
+            msg: `${results.affectedRows} USER DELETED`,
+        });
     });
 });
 
@@ -325,7 +330,9 @@ router.post("/products", bodyParser.json(), (req, res) => {
         [bd.title, bd.price, bd.category, bd.description, bd.img],
         (err, results) => {
             if (err) throw err;
-            res.send(`${results.affectedRows} PRODUCT/S ADDED`);
+            res.json({
+                status: 200,
+                msg: `${results.affectedRows} PRODUCT/S ADDED`});
         }
     );
 });
@@ -351,7 +358,9 @@ router.put("/products/:id", bodyParser.json(), (req, res) => {
         ],
         (err, results) => {
             if (err) throw err;
-            res.send(`${results.affectedRows} PRODUCT/S UPDATED`);
+            res.json({
+                status: 200,
+                msg: `${results.affectedRows} PRODUCT/S UPDATED`});
         }
     );
 });
@@ -367,7 +376,9 @@ app.delete("/products/:id", (req, res) => {
     `;
     db.query(strQry, [req.params.id], (err, data) => {
         if (err) throw err;
-        res.send(`${data.affectedRows} PRODUCT/S WAS DELETED`);
+        res.json({
+            status: 200,
+            msg: `${results.affectedRows} PRODUCT/S DELETED`});
     });
 });
 
@@ -424,7 +435,9 @@ router.post("/paintings", bodyParser.json(), (req, res) => {
         [bd.title, bd.price, bd.category, bd.description, bd.size, bd.img],
         (err, results) => {
             if (err) throw err;
-            res.send(`${results.affectedRows} PAINTING ADDED`);
+            res.json({
+                status: 200,
+                msg: `${results.affectedRows} PAINTING/S DELETED`});
         }
     );
 });
@@ -440,7 +453,10 @@ app.delete("/paintings/:id", (req, res) => {
     `;
     db.query(strQry, [req.params.id], (err, data) => {
         if (err) throw err;
-        res.send(`${data.affectedRows} PAINTING WAS DELETED`);
+        res.json({
+            status: 200,
+            msg: `${data.affectedRows} PAINTING WAS DELETED`,
+        });
     });
 });
 
@@ -466,7 +482,9 @@ router.put("/paintings/:id", bodyParser.json(), (req, res) => {
         ],
         (err, results) => {
             if (err) throw err;
-            res.send(`${results.affectedRows} PAINTING UPDATED`);
+            res.json({
+                status: 200,
+                msg: `${results.affectedRows} PAINTING/S UPDATED`});
         }
     );
 });
@@ -508,6 +526,7 @@ router.post("/users/:id/cart", bodyParser.json(), (req, res) => {
                 db.query(updateCart, JSON.stringify(cart), (err, results) => {
                     if (err) res.send(`${err}`);
                     res.json({
+                        status: 200,
                         cart: results,
                     });
                 });
@@ -654,6 +673,7 @@ router.post("/users/:id/artcart", bodyParser.json(), (req, res) => {
                 db.query(updateArtCart, JSON.stringify(artcart), (err, results) => {
                     if (err) res.send(`${err}`);
                     res.json({
+                        status: 200,
                         artcart: results,
                     });
                 });

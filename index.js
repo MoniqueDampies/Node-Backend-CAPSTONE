@@ -236,7 +236,7 @@ router.put("/users/:id", bodyParser.json(), (req, res) => {
     // Query
     const strQry = `
     UPDATE users
-    SET *
+    SET firstname=?, lastName=?, email=?, phone=?, province=?, country=?, userRole=?
     WHERE id=?`;
     db.query(
         strQry,
@@ -247,14 +247,22 @@ router.put("/users/:id", bodyParser.json(), (req, res) => {
             req.body.phone,
             req.body.province,
             req.body.country,
+            req.body.userRole,
             req.params.id,
         ],
         (err, results) => {
             if (err) throw err;
-            res.json({
-                status: 200,
-                msg: `${results.affectedRows} USER DETAILS UPDATED`,
-            });
+            if (results.length < 1) {
+                res.json({
+                    status: 400,
+                    results: "There is no user with that ID",
+                });
+            } else {
+                res.json({
+                    status: 200,
+                    msg: `${results.affectedRows} USER DETAILS UPDATED`,
+                });
+            }
         }
     );
 });
@@ -272,7 +280,7 @@ router.delete("/users/:id", (req, res) => {
         if (err) throw err;
         res.json({
             status: 200,
-            msg: `${results.affectedRows} USER DELETED`,
+            msg: `USER DELETED`,
         });
     });
 });
@@ -293,7 +301,7 @@ router.get("/products", (req, res) => {
         if (err) throw err;
         res.json({
             status: 200,
-            results: results.length <= 0 ? "Sorry, no products was found." :results,
+            results: results.length <= 0 ? "Sorry, no products was found." : results,
         });
     });
 });
@@ -381,7 +389,7 @@ app.delete("/products/:id", (req, res) => {
         if (err) throw err;
         res.json({
             status: 200,
-            msg:  `${results.affectedRows} PRODUCT/S DELETED`,
+            msg: `${results.affectedRows} PRODUCT/S DELETED`,
         });
     });
 });
@@ -562,7 +570,7 @@ router.get("/users/:id/cart", (req, res) => {
                 status: 200,
                 results: JSON.parse(results[0].cart),
             });
-        }   
+        }
     });
 });
 

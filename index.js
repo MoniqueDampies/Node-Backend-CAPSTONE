@@ -251,7 +251,7 @@ router.put("/users/:id", bodyParser.json(), (req, res) => {
         ],
         (err, results) => {
             if (err) throw err;
-            res({
+            res.json({
                 status: 200,
                 msg: `${results.affectedRows} USER DETAILS UPDATED`,
             });
@@ -270,7 +270,7 @@ router.delete("/users/:id", (req, res) => {
     `;
     db.query(strQry, [req.params.id], (err, data) => {
         if (err) throw err;
-        res({
+        res.json({
             status: 200,
             msg: `${results.affectedRows} USER DELETED`,
         });

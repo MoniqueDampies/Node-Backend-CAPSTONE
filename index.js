@@ -173,12 +173,12 @@ app.post("/register", bodyParser.json(), (req, res) => {
                     if (results.length < 1) {
                         res.json({
                             status: 400,
-                            msg: "Register Failed.",
+                            msg: "Registration Failed. Email already taken",
                         });
                     } else {
                         res.json({
                             status: 200,
-                            msg: "Register Successful.",
+                            msg: "Registration Successful.",
                         });
                     }
                 }

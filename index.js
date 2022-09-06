@@ -121,7 +121,7 @@ app.post("/login", bodyParser.json(), (req, res) => {
                 default:
                     res.json({
                         status: 400,
-                        msg: "Incorrect Password or Email",
+                        msg: "Incorrect Password or Email. Please try again.",
                     });
             }
         });

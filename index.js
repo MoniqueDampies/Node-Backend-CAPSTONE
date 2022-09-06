@@ -178,7 +178,7 @@ app.post("/register", bodyParser.json(), (req, res) => {
                     } else {
                         res.json({
                             status: 200,
-                            msg: "Registration Successful.",
+                            msg: "Registration Successful. Please Login. ",
                         });
                     }
                 }

@@ -121,7 +121,7 @@ app.post("/login", bodyParser.json(), (req, res) => {
                 default:
                     res.json({
                         status: 400,
-                        msg: "Login Failed.",
+                        msg: "Incorrect Password or Email",
                     });
             }
         });
@@ -142,9 +142,10 @@ app.post("/register", bodyParser.json(), (req, res) => {
         if (err) throw err;
         // VALIDATION
         if (results.length > 0) {
-            res.send(
-                "The provided email/phone number exists. Please enter another one"
-            );
+            res.json({
+                status: 400,
+                results: "The provided email/phone number exists. Please enter another one",
+            });
         } else {
             const bd = req.body;
             console.log(bd);
@@ -218,7 +219,7 @@ router.get("/users/:id", (req, res) => {
         if (err) throw err;
         if (results.length < 1) {
             res.json({
-                status: 204,
+                status: 404,
                 results: "User does not exist",
             });
         } else {
@@ -276,12 +277,19 @@ router.delete("/users/:id", (req, res) => {
     WHERE id = ?;
     ALTER TABLE users AUTO_INCREMENT = 1;
     `;
-    db.query(strQry, [req.params.id], (err, data) => {
+    db.query(strQry, [req.params.id], (err, results) => {
         if (err) throw err;
-        res.json({
-            status: 200,
-            msg: `USER DELETED`,
-        });
+        if (results.length < 1) {
+            res.json({
+                status: 400,
+                results: "There is no user with that ID",
+            });
+        } else {
+            res.json({
+                status: 200,
+                msg: `${results.affectedRows} USER DELETED`,
+            });
+        }
     });
 });
 

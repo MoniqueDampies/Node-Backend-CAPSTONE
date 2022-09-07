@@ -22,6 +22,7 @@ app.listen(port, () => {
 // allow access to fetch data from the api externally by  Seting header
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Headers", "*");
     res.setHeader("Access-Control-Allow-Methods", "*");
     res.setHeader("Access-Control-Allow-*", "*");
@@ -86,7 +87,7 @@ router.get("/productss", (req, res) => {
 //-----------------------------------------VERIFICATION ROUTES---------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//*LOGIN USER*//
+//*LOGIN USER*// tested working
 
 app.post("/login", bodyParser.json(), (req, res) => {
     try {
@@ -109,9 +110,9 @@ app.post("/login", bodyParser.json(), (req, res) => {
                         JSON.stringify(results[0]),
                         process.env.secret,
                         (err, token) => {
-                            if (err) throw err;
                             res.json({
                                 status: 200,
+                                msg: `Login successful`,
                                 user: results,
                                 token: token,
                             });
@@ -139,9 +140,7 @@ app.post("/register", bodyParser.json(), (req, res) => {
         email: req.body.email,
     };
     db.query(emails, email, async (err, results) => {
-        if (err) throw err;
-        // VALIDATION
-        if (results.length > 0) {
+        if (err) {
             res.json({
                 status: 400,
                 results: "The provided email/phone number exists. Please enter another one",
@@ -169,11 +168,10 @@ app.post("/register", bodyParser.json(), (req, res) => {
                     bd.country,
                 ],
                 (err, results) => {
-                    if (err) throw err;
-                    if (results.length < 1) {
+                    if (err) {
                         res.json({
                             status: 400,
-                            msg: "Registration Failed. Email already taken",
+                            msg: "Registration Failed. Email already taken. Please try again",
                         });
                     } else {
                         res.json({
@@ -197,99 +195,70 @@ router.get("/users", (req, res) => {
     const query = `SELECT * FROM users`;
     db.query(query, (err, results) => {
         if (err) throw err;
-        if (results.length < 1) {
-            res.json({
-                status: 204,
-                results: "There are no users",
-            });
-        } else {
-            res.json({
-                status: 200,
-                results: results,
-            });
-        }
+        res.json({
+            status: 200,
+            results: results.length <= 0 ? "Sorry, no user was found." : results,
+        });
     });
 });
 
 //*GET A USER WITH A SPECIFIC ID*//
 
 router.get("/users/:id", (req, res) => {
-    const query = `SELECT * FROM users WHERE id=?`;
+    const query = `SELECT * FROM users WHERE id=${req.params.id}`;
     db.query(query, req.params.id, (err, results) => {
         if (err) throw err;
-        if (results.length < 1) {
+        res.json({
+            status: 200,
+            results: results.length <= 0 ? "Sorry, no user was found." : results,
+        });
+    });
+});
+
+//*UPDATE A USER*//
+router.put("/users/:id", bodyParser.json(), async (req, res) => {
+    const { firstName, lastName, email, phone, province, country, isAdmin, password } = req.body;
+    let sql = `UPDATE users SET ? WHERE id = ${req.params.id} `;
+    const user = {
+        firstName, lastName, email, phone, province, country, isAdmin, password
+    };
+    db.query(sql, user, (err) => {
+        if (err) {
             res.json({
-                status: 404,
-                results: "User does not exist",
+                status: 400,
+                msg: `Updated failed ${err}`,
             });
         } else {
             res.json({
                 status: 200,
-                results: results,
+                msg: "Updated Successfull",
             });
         }
     });
 });
 
-//*UPDATE A USER*//
-
-router.put("/users/:id", bodyParser.json(), (req, res) => {
-    // Query
-    const strQry = `
-    UPDATE users
-    SET firstname=?, lastName=?, email=?, phone=?, province=?, country=?, userRole=?
-    WHERE id=?`;
-    db.query(
-        strQry,
-        [
-            req.body.firstName,
-            req.body.lastName,
-            req.body.email,
-            req.body.phone,
-            req.body.province,
-            req.body.country,
-            req.body.userRole,
-            req.params.id,
-        ],
-        (err, results) => {
-            if (err) throw err;
-            if (results.length < 1) {
-                res.json({
-                    status: 400,
-                    results: "There is no user with that ID",
-                });
-            } else {
-                res.json({
-                    status: 200,
-                    msg: `${results.affectedRows} USER DETAILS UPDATED`,
-                });
-            }
-        }
-    );
-});
 
 //*DELETE USER WITH SPECIFIC ID*//
-
-router.delete("/users/:id", (req, res) => {
-    // Query
-    const strQry = `
-    DELETE FROM users 
-    WHERE id = ?;
+app.delete('/users/:id', (req, res) => {
+    // mySQL query
+    const strQry =
+        `
+    DELETE FROM users WHERE id = ${req.params.id};
     ALTER TABLE users AUTO_INCREMENT = 1;
     `;
+
     db.query(strQry, [req.params.id], (err, results) => {
-        if (err) throw err;
-        if (results.length < 1) {
+        if (err)
             res.json({
                 status: 400,
-                results: "There is no user with that ID",
-            });
-        } else {
-            res.json({
-                status: 200,
-                msg: `${results.affectedRows} USER DELETED`,
-            });
-        }
+                msg: `${err}`
+            })
+                ;
+        // else
+        res.json({
+            status: 200,
+            msg: `Deleted Successfully`
+        });
     });
 });
 
@@ -321,7 +290,7 @@ router.get("/products/:id", (req, res) => {
     const strQry = `
     SELECT *
     FROM products
-    WHERE id = ?;
+    WHERE id = ${req.params.id};
     `;
     db.query(strQry, [req.params.id], (err, results) => {
         if (err) throw err;
@@ -334,7 +303,7 @@ router.get("/products/:id", (req, res) => {
 
 //*CREATE A NEW PRODUCT*//
 
-router.post("/products", bodyParser.json(), (req, res) => {
+app.post("/products", bodyParser.json(), (req, res) => {
     const bd = req.body;
     // bd.totalamount = bd.quantity * bd.price;
     // Query
@@ -346,24 +315,30 @@ router.post("/products", bodyParser.json(), (req, res) => {
         strQry,
         [bd.title, bd.price, bd.category, bd.description, bd.img],
         (err, results) => {
-            if (err) throw err;
-            res.json({
-                status: 200,
-                msg: `${results.affectedRows} PRODUCT/S ADDED`,
-            });
+            if (err) {
+                res.json({
+                    status: 400,
+                    msg: `Failed to create product`
+                });
+            } else {
+                res.json({
+                    status: 200,
+                    msg: `${results.affectedRows} PRODUCT/S ADDED`,
+                });
+            }
         }
     );
 });
 
 //*UPDATE A PRODUCT*//
 
-router.put("/products/:id", bodyParser.json(), (req, res) => {
+app.put("/products/:id", bodyParser.json(), (req, res) => {
     // const bd = req.body;
     // Query
     const strQry = `
     UPDATE products 
     SET title=?, price=?, category=?, description=?,  img=?
-    WHERE id=?`;
+    WHERE id=${req.params.id}`;
     db.query(
         strQry,
         [
@@ -375,11 +350,17 @@ router.put("/products/:id", bodyParser.json(), (req, res) => {
             req.params.id,
         ],
         (err, results) => {
-            if (err) throw err;
-            res.json({
-                status: 200,
-                msg: `${results.affectedRows} PRODUCT/S UPDATED`,
-            });
+            if (err) {
+                res.json({
+                    status: 400,
+                    msg: `Failed to update product`
+                });
+            } else {
+                res.json({
+                    status: 200,
+                    msg: `${results.affectedRows} PRODUCT/S UPDATED`,
+                });
+            }
         }
     );
 });
@@ -390,15 +371,21 @@ app.delete("/products/:id", (req, res) => {
     // QUERY
     const strQry = `
     DELETE FROM products 
-    WHERE id = ?;
+    WHERE id = ${req.params.id};
     ALTER TABLE products AUTO_INCREMENT = 1;
     `;
     db.query(strQry, [req.params.id], (err, results) => {
-        if (err) throw err;
-        res.json({
-            status: 200,
-            msg: `${results.affectedRows} PRODUCT/S DELETED`,
-        });
+        if (err) {
+            res.json({
+                status: 400,
+                msg: `Failed to delete product`
+            });
+        } else {
+            res.json({
+                status: 200,
+                msg: `${results.affectedRows} PRODUCT/S DELETED`,
+            });
+        }
     });
 });
 
@@ -418,7 +405,7 @@ router.get("/paintings", (req, res) => {
         if (err) throw err;
         res.json({
             status: 200,
-            results: results,
+            results: results.length <= 0 ? "Sorry, no paintings was found." :results,
         });
     });
 });
@@ -430,7 +417,7 @@ router.get("/paintings/:id", (req, res) => {
     const strQry = `
     SELECT *
     FROM paintings
-    WHERE id = ?;
+    WHERE id = ${req.params.id};
     `;
     db.query(strQry, [req.params.id], (err, results) => {
         if (err) throw err;
@@ -443,7 +430,7 @@ router.get("/paintings/:id", (req, res) => {
 
 //*CREATE A NEW PAINTING*//
 
-router.post("/paintings", bodyParser.json(), (req, res) => {
+app.post("/paintings", bodyParser.json(), (req, res) => {
     const bd = req.body;
     // Query
     const strQry = `
@@ -454,11 +441,17 @@ router.post("/paintings", bodyParser.json(), (req, res) => {
         strQry,
         [bd.title, bd.price, bd.category, bd.description, bd.size, bd.img],
         (err, results) => {
-            if (err) throw err;
-            res.json({
-                status: 200,
-                msg: `${results.affectedRows} PAINTING/S DELETED`,
-            });
+            if (err) {
+                res.json({
+                    status: 400,
+                    msg: `Failed to create painting`
+                });
+            } else {
+                res.json({
+                    status: 200,
+                    msg: `${results.affectedRows} PAINTING/S ADDED`,
+                });
+            }
         }
     );
 });
@@ -469,27 +462,33 @@ app.delete("/paintings/:id", (req, res) => {
     // QUERY
     const strQry = `
     DELETE FROM paintings 
-    WHERE id = ?;
+    WHERE id = ${req.params.id};
     ALTER TABLE paintings AUTO_INCREMENT = 1;
     `;
-    db.query(strQry, [req.params.id], (err, data) => {
-        if (err) throw err;
-        res.json({
-            status: 200,
-            msg: `${data.affectedRows} PAINTING WAS DELETED`,
-        });
+    db.query(strQry, [req.params.id], (err, results) => {
+        if (err) {
+            res.json({
+                status: 400,
+                msg: `Failed to delete paintings`
+            });
+        } else {
+            res.json({
+                status: 200,
+                msg: `${results.affectedRows} PAINTING/S DELETED`,
+            });
+        }
     });
 });
 
 //*UPDATE A PAINTING*//
 
-router.put("/paintings/:id", bodyParser.json(), (req, res) => {
+app.put("/paintings/:id", bodyParser.json(), (req, res) => {
     // const bd = req.body;
     // Query
     const strQry = `
     UPDATE paintings 
     SET title=?, price=?, category=?, description=?, size=?, img=?
-    WHERE id=?`;
+    WHERE id=${req.params.id}`;
     db.query(
         strQry,
         [
@@ -502,11 +501,17 @@ router.put("/paintings/:id", bodyParser.json(), (req, res) => {
             req.params.id,
         ],
         (err, results) => {
-            if (err) throw err;
-            res.json({
-                status: 200,
-                msg: `${results.affectedRows} PAINTING/S UPDATED`,
-            });
+            if (err) {
+                res.json({
+                    status: 400,
+                    msg: `Failed to update painting`
+                });
+            } else {
+                res.json({
+                    status: 200,
+                    msg: `${results.affectedRows} PAINTING/S UPDATED`,
+                });
+            }
         }
     );
 });
@@ -515,7 +520,7 @@ router.put("/paintings/:id", bodyParser.json(), (req, res) => {
 //--------------------------------------------PRODUCTS CART ROUTES--------------------------------------------------------//
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//*ADD PRODUCTS TO CART FROM SPECIFIC USER*//
+//*ADD PRODUCTS TO CART FROM SPECIFIC USER*//*** */
 
 router.post("/users/:id/cart", bodyParser.json(), (req, res) => {
     // mySQL query
@@ -557,17 +562,16 @@ router.post("/users/:id/cart", bodyParser.json(), (req, res) => {
     });
 });
 
-//*GET ALL CART PRODUCTS FROM SPECIFIC USER*//
+//*GET ALL CART PRODUCTS FROM SPECIFIC USER*//*** */
 
 router.get("/users/:id/cart", (req, res) => {
     // Query
     const strQry = `
         SELECT *
         FROM users
-        WHERE id = ?;
+        WHERE id = ${req.params.id};
         `;
     db.query(strQry, [req.params.id], (err, results) => {
-        if (err) throw err;
         if (results.length < 1) {
             res.json({
                 status: 400,
@@ -589,10 +593,15 @@ router.get("/users/:id/cart/:cartid", (req, res) => {
     const strQry = `
         SELECT *
         FROM users
-        WHERE id = ?;
+        WHERE id = ${req.params.id};
         `;
     db.query(strQry, [req.params.id], (err, results) => {
-        if (err) throw err;
+        if (results.length < 1) {
+            res.json({
+                status: 400,
+                msg: `Failed to view cart item`
+            });
+        }
         let cartResults = JSON.parse(results[0].cart);
         res.json({
             status: 200,
@@ -603,25 +612,31 @@ router.get("/users/:id/cart/:cartid", (req, res) => {
     });
 });
 
-//*DELETE ALL PRODUCTS FROM CART FOR SPECIFIC USER*//
+//*DELETE ALL PRODUCTS FROM CART FOR SPECIFIC USER*//*** */
 
 router.delete("/users/:id/cart", (req, res) => {
     // Query
     const strQry = `
         UPDATE users
         SET cart=null
-        WHERE id=?
+        WHERE id=${req.params.id}
         `;
     db.query(strQry, [req.params.id], (err, results) => {
-        if (err) throw err;
+        if (err) {
+            res.json({
+                status: 400,
+                msg: `Failed to delete cart item`
+            });
+        }
         res.json({
             status: 200,
             results: results,
+            msg: `Cart cleared`
         });
     });
 });
 
-//*DELETE SPECIFIC CART PRODUCTS FROM SPECIFIC USER*//
+//*DELETE SPECIFIC CART PRODUCTS FROM SPECIFIC USER*//*** */
 
 router.delete("/users/:id/cart/:cartid", (req, res) => {
     const delSingleCartId = `
@@ -629,7 +644,12 @@ router.delete("/users/:id/cart/:cartid", (req, res) => {
     WHERE id = ${req.params.id}
 `;
     db.query(delSingleCartId, (err, results) => {
-        if (err) throw err;
+        if (err) {
+            res.json({
+                status: 400,
+                msg: `Failed to delete cart item`
+            });
+        }
         if (results.length > 0) {
             if (results[0].cart != null) {
                 const result = JSON.parse(results[0].cart).filter((cart) => {
@@ -644,7 +664,12 @@ router.delete("/users/:id/cart/:cartid", (req, res) => {
                 WHERE id = ${req.params.id}
             `;
                 db.query(query, [JSON.stringify(result)], (err, results) => {
-                    if (err) throw err;
+                    if (err) {
+                        res.json({
+                            status: 400,
+                            msg: `Failed to delete cart item`
+                        });
+                    }
                     res.json({
                         status: 200,
                         results: "Successfully deleted item from cart",
@@ -676,7 +701,12 @@ router.post("/users/:id/artcart", bodyParser.json(), (req, res) => {
     let artcart = `SELECT artcart FROM users WHERE id = ${req.params.id};`;
     // function
     db.query(artcart, (err, results) => {
-        if (err) throw err;
+        if (err) {
+            res.json({
+                status: 400,
+                msg: `Failed to get cart item`
+            });
+        }
         if (results.length > 0) {
             let artcart;
             if (results[0].artcart == null) {
@@ -691,21 +721,33 @@ router.post("/users/:id/artcart", bodyParser.json(), (req, res) => {
             let paintings = `Select * FROM paintings WHERE id = ?`;
             // function
             db.query(paintings, id, (err, paintingsData) => {
-                if (err) res.send(`${err}`);
-                let data = {
-                    artcart_id: artcart.length + 1,
-                    paintingsData,
-                };
-                artcart.push(data);
-                console.log(artcart);
-                let updateArtCart = `UPDATE users SET artcart = ? WHERE id = ${req.params.id}`;
-                db.query(updateArtCart, JSON.stringify(artcart), (err, results) => {
-                    if (err) res.send(`${err}`);
+                if (err) {
                     res.json({
-                        status: 200,
-                        artcart: results,
+                        status: 400,
+                        msg: `Failed to update cart`
                     });
-                });
+                } else {
+                    let data = {
+                        artcart_id: artcart.length + 1,
+                        paintingsData,
+                    };
+                    artcart.push(data);
+                    console.log(artcart);
+                    let updateArtCart = `UPDATE users SET artcart = ? WHERE id = ${req.params.id}`;
+                    db.query(updateArtCart, JSON.stringify(artcart), (err, results) => {
+                        if (err) {
+                            res.json({
+                                status: 400,
+                                msg: `Failed to update cart`
+                            });
+                        } else {
+                            res.json({
+                                status: 200,
+                                artcart: results,
+                            });
+                        }
+                    });
+                }
             });
         }
     });
@@ -739,14 +781,20 @@ router.get("/users/:id/artcart/:cartid", (req, res) => {
         WHERE id = ?;
         `;
     db.query(strQry, [req.params.id], (err, results) => {
-        if (err) throw err;
-        let artcartResults = JSON.parse(results[0].artcart);
-        res.json({
-            status: 200,
-            results: artcartResults.filter((item) => {
-                return item.artcart_id == req.params.cartid;
-            }),
-        });
+        if (err) {
+            res.json({
+                status: 400,
+                msg: `Failed to get cart item`
+            });
+        } else {
+            let artcartResults = JSON.parse(results[0].artcart);
+            res.json({
+                status: 200,
+                results: artcartResults.filter((item) => {
+                    return item.artcart_id == req.params.cartid;
+                }),
+            });
+        }
     });
 });
 
@@ -760,11 +808,17 @@ router.delete("/users/:id/artcart", (req, res) => {
         WHERE id=?
         `;
     db.query(strQry, [req.params.id], (err, results) => {
-        if (err) throw err;
-        res.json({
-            status: 200,
-            results: results,
-        });
+        if (err) {
+            res.json({
+                status: 400,
+                msg: `Failed to delete cart item`
+            });
+        } else {
+            res.json({
+                status: 200,
+                results: results,
+            });
+        }
     });
 });
 
@@ -776,7 +830,12 @@ router.delete("/users/:id/artcart/:cartid", (req, res) => {
     WHERE id = ${req.params.id}
 `;
     db.query(deleteSingleArtCartId, (err, results) => {
-        if (err) throw err;
+        if (err) {
+            res.json({
+                status: 400,
+                msg: `Failed to delete cart item`
+            });
+        }
         if (results.length > 0) {
             if (results[0].artcart != null) {
                 const result = JSON.parse(results[0].artcart).filter((artcart) => {
@@ -791,11 +850,17 @@ router.delete("/users/:id/artcart/:cartid", (req, res) => {
                 WHERE id = ${req.params.id}
             `;
                 db.query(query, [JSON.stringify(result)], (err, results) => {
-                    if (err) throw err;
-                    res.json({
-                        status: 200,
-                        results: "Successfully deleted item from the artcart",
-                    });
+                    if (err) {
+                        res.json({
+                            status: 400,
+                            msg: `Failed to view cart item`
+                        });
+                    } else {
+                        res.json({
+                            status: 200,
+                            results: "Successfully deleted item from the artcart",
+                        });
+                    }
                 });
             } else {
                 res.json({

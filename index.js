@@ -205,8 +205,8 @@ router.get("/users", (req, res) => {
 //*GET A USER WITH A SPECIFIC ID*//
 
 router.get("/users/:id", (req, res) => {
-    const query = `SELECT * FROM users WHERE id=${req.params.id}`;
-    db.query(query, req.params.id, (err, results) => {
+    const query = `SELECT * FROM users WHERE id= ?`;
+    db.query(query, [req.params.id], (err, results) => {
         if (err) throw err;
         res.json({
             status: 200,
